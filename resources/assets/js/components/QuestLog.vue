@@ -2,8 +2,11 @@
     <div class="quest-log">
         <div class="panel panel-default">
             <div class="panel-body">
-                <div class="quest" v-for="quest in quests">
-                    {{ quest.name }} <a href="#">Edit</a>
+                <h5>Quests</h5>
+                <div class="quest-list">
+                    <div class="quest" v-for="quest in quests">
+                        {{ quest.name }} <a href="#">Edit</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -14,18 +17,20 @@
     export default {
         mounted() {
             var self = this;
+            self.loadQuests();
         },
         methods: {
+            loadQuests: function() {
+                fetch('/api/quest')
+                    .then(quests => quests.json())
+                    .then(quests => {
+                        this.quests = quests;
+                    });
+            }
         },
         data: function () {
             return {
-                quests: [{
-                    name: 'Bob the ogre'
-                }, {
-                    name: 'Justin Beaver\'s flute'
-                }, {
-                    name: 'Find Eva'
-                }]
+                quests: []
             }
         }
     }
@@ -40,6 +45,10 @@
         height: 400px;
         z-index: 100;
         padding: 2px 5px;
+    }
+    .quest-list {
+        max-height: 80%;
+        overflow-y: scroll;
     }
     .quest {
         padding: 0 3px;

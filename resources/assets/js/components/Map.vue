@@ -20,6 +20,7 @@
             var icons = {};
             var iconScale = 0.35;
             var lastIconScale = 0;
+            var showingTooltip = false;
 
             // Icon definitions
             icons = {
@@ -100,9 +101,28 @@
                     $(element).popover('destroy');
                     return;
                 }
-                var pixel = map.getEventPixel(e.originalEvent);
-                var hit = map.hasFeatureAtPixel(pixel);
-                map.getTargetElement().style.cursor = hit ? 'pointer' : '';
+                var feature = map.forEachFeatureAtPixel(e.pixel, function(feature) {
+                    return feature;
+                });
+                if (feature) {
+                    if (!showingTooltip) {
+                        map.getTargetElement().style.cursor = 'pointer';
+                        var coordinates = feature.getGeometry().getCoordinates();
+                        popup.setPosition(coordinates);
+                        $(element).popover({
+                            'placement': 'top',
+                            'html': true,
+                            'content': feature.get('name'),
+                            'container': map.getTargetElement()
+                        });
+                        $(element).popover('show');
+                        showingTooltip = true;
+                    }
+                } else {
+                    map.getTargetElement().style.cursor = '';
+                    $(element).popover('hide');
+                    showingTooltip = false;
+                }
             });
 
             // Popup
@@ -120,19 +140,7 @@
                 var feature = map.forEachFeatureAtPixel(evt.pixel, function(feature) {
                     return feature;
                 });
-                if (feature) {
-                    var coordinates = feature.getGeometry().getCoordinates();
-                    popup.setPosition(coordinates);
-                    $(element).popover({
-                        'placement': 'top',
-                        'html': true,
-                        'content': feature.get('name'),
-                        'container': map.getTargetElement()
-                    });
-                    $(element).popover('show');
-                } else {
-                    $(element).popover('destroy');
-
+                if (!feature) {
                     if (icons[self.selectedTool]) {
                         addIcon(map, icons[self.selectedTool], evt.coordinate);
                         self.selectedTool = 'none';
