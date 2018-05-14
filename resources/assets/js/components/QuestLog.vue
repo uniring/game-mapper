@@ -16,15 +16,14 @@
 <script>
     export default {
         mounted() {
-            var self = this;
+            let self = this;
             self.loadQuests();
         },
         methods: {
             loadQuests: function() {
-                fetch('/api/quest')
-                    .then(quests => quests.json())
-                    .then(quests => {
-                        this.quests = quests;
+                axios.get('/api/quest')
+                    .then(response => {
+                        this.quests = response.data;
                     });
             }
         },

@@ -13,149 +13,172 @@
             'quest-log': require('./QuestLog.vue')
         },
         mounted() {
-            // Initialize map
-            var self = this;
-            var imgWidth = 20000;
-            var imgHeight = 12000;
-            var icons = {};
-            var iconScale = 0.35;
-            var lastIconScale = 0;
-            var showingTooltip = false;
+            let self = this;
 
-            // Icon definitions
-            icons = {
-                warp: new ol.style.Icon({
-                    anchor: [0.5, 1],
-                    anchorXUnits: 'fraction',
-                    anchorYUnits: 'fraction',
-                    src: '/img/icons/warp.png',
-                    scale: iconScale
-                }),
-                npc: new ol.style.Icon({
-                    anchor: [0.5, 1],
-                    anchorXUnits: 'fraction',
-                    anchorYUnits: 'fraction',
-                    src: '/img/icons/npc.png',
-                    scale: iconScale
-                }),
-                enemy: new ol.style.Icon({
-                    anchor: [0.5, 1],
-                    anchorXUnits: 'fraction',
-                    anchorYUnits: 'fraction',
-                    src: '/img/icons/enemy.png',
-                    scale: iconScale
-                })
-            };
-
-            var layer = new ol.layer.Tile({
+            let layer = new ol.layer.Tile({
                 source: new ol.source.Zoomify({
                     url: '/img/map/',
-                    size: [imgWidth, imgHeight],
+                    size: [
+                        self.imgWidth,
+                        self.imgHeight
+                    ],
                     crossOrigin: 'anonymous'
                 })
             });
 
-            var extent = [0, -imgHeight, imgWidth, 0];
+            let extent = [0, -self.imgHeight, self.imgWidth, 0];
 
-            var map = new ol.Map({
+            self.map = new ol.Map({
                 layers: [layer],
                 target: 'map',
                 view: new ol.View({
                     resolutions: layer.getSource().getTileGrid().getResolutions(),
                     extent: extent
                 }),
-                controls : ol.control.defaults({
-                    attribution : false,
+                controls: ol.control.defaults({
+                    attribution: false,
                     zoom: false
                 })
             });
-            map.getView().fit(extent);
-            map.getView().on('change:resolution', function () {
-                var zoom = map.getView().getZoom();
-                iconScale = 0.35;
+            self.map.getView().fit(extent);
+            self.map.getView().on('change:resolution', function () {
+                let zoom = self.map.getView().getZoom();
+                self.iconScale = 0.35;
                 if (zoom > 4) {
-                    iconScale = 0.5;
+                    self.iconScale = 0.5;
                 }
                 if (zoom > 5) {
-                    iconScale = 0.75;
+                    self.iconScale = 0.75;
                 }
                 if (zoom > 6) {
-                    iconScale = 1;
+                    self.iconScale = 1;
                 }
-                if (lastIconScale !== iconScale) {
-                    for (var i in icons) {
-                        if (typeof icons[i].setScale == 'function') {
-                            icons[i].setScale(iconScale);
+                if (self.lastIconScale !== self.iconScale) {
+                    for (var i in self.icons) {
+                        if (typeof self.icons[i].setScale == 'function') {
+                            self.icons[i].setScale(self.iconScale);
                         }
                     }
                 }
-                lastIconScale = iconScale;
+                self.lastIconScale = self.iconScale;
             });
 
-            map.on('singleclick', function (evt) {
-
-            });
-
-            map.on('pointermove', function(e) {
+            self.map.on('pointermove', function (e) {
                 if (e.dragging) {
-                    $(element).popover('destroy');
+                    $(self.popupEl).popover('destroy');
                     return;
                 }
-                var feature = map.forEachFeatureAtPixel(e.pixel, function(feature) {
+                let feature = self.map.forEachFeatureAtPixel(e.pixel, function (feature) {
                     return feature;
                 });
                 if (feature) {
-                    if (!showingTooltip) {
-                        map.getTargetElement().style.cursor = 'pointer';
-                        var coordinates = feature.getGeometry().getCoordinates();
-                        popup.setPosition(coordinates);
-                        $(element).popover({
+                    if (!self.showingTooltip) {
+                        self.map.getTargetElement().style.cursor = 'pointer';
+                        let coordinates = feature.getGeometry().getCoordinates();
+                        self.popup.setPosition(coordinates);
+                        $(self.popupEl).popover({
                             'placement': 'top',
                             'html': true,
                             'content': feature.get('name'),
-                            'container': map.getTargetElement()
+                            'container': self.map.getTargetElement()
                         });
-                        $(element).popover('show');
-                        showingTooltip = true;
+                        $(self.popupEl).popover('show');
+                        self.showingTooltip = true;
                     }
                 } else {
-                    map.getTargetElement().style.cursor = '';
-                    $(element).popover('hide');
-                    showingTooltip = false;
+                    self.map.getTargetElement().style.cursor = '';
+                    $(self.popupEl).popover('hide');
+                    self.showingTooltip = false;
                 }
             });
 
-            // Popup
+            self.map.addOverlay(self.popup);
 
-            var element = document.getElementById('popup');
-            var popup = new ol.Overlay({
-                element: element,
-                positioning: 'bottom-center',
-                stopEvent: false,
-                offset: [0, -15]
-            });
-            map.addOverlay(popup);
-
-            map.on('click', function(evt) {
-                var feature = map.forEachFeatureAtPixel(evt.pixel, function(feature) {
+            self.map.on('click', function (evt) {
+                let feature = self.map.forEachFeatureAtPixel(evt.pixel, function (feature) {
                     return feature;
                 });
                 if (!feature) {
-                    if (icons[self.selectedTool]) {
-                        addIcon(map, icons[self.selectedTool], evt.coordinate);
+                    if (self.icons[self.selectedTool]) {
+                        self.addIcon(evt.coordinate);
                         self.selectedTool = 'none';
                     }
                 }
             });
         },
         methods: {
-            setTool(tool) {
-                alert(tool);
+            addIcon(coordinates) {
+                let self = this;
+                let name = prompt('Enter a name');
+
+                let iconFeature = new ol.Feature({
+                    geometry: new ol.geom.Point(coordinates),
+                    name: name
+                });
+
+                let iconStyle = new ol.style.Style({
+                    image: self.icons[self.selectedTool],
+                });
+
+                let vectorSource = new ol.source.Vector({
+                    features: [iconFeature]
+                });
+
+                let vectorLayer = new ol.layer.Vector({
+                    updateWhileInteracting: true,
+                    source: vectorSource,
+                    style: iconStyle
+                });
+                self.map.addLayer(vectorLayer);
+                self.map.render();
+
+                axios.post('/api/point', {
+                    name: name,
+                    map_x: coordinates[0],
+                    map_y: coordinates[1],
+                    type: self.selectedTool
+                });
             }
         },
         data: function () {
             return {
-                selectedTool: 'none'
+                selectedTool: 'none',
+                map: null,
+                imgWidth: 20000,
+                imgHeight: 12000,
+                iconScale: 0.35,
+                lastIconScale: 0,
+                showingTooltip: false,
+                icons: {
+                    warp: new ol.style.Icon({
+                        anchor: [0.5, 1],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'fraction',
+                        src: '/img/icons/warp.png',
+                        scale: this.iconScale
+                    }),
+                    npc: new ol.style.Icon({
+                        anchor: [0.5, 1],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'fraction',
+                        src: '/img/icons/npc.png',
+                        scale: this.iconScale
+                    }),
+                    enemy: new ol.style.Icon({
+                        anchor: [0.5, 1],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'fraction',
+                        src: '/img/icons/enemy.png',
+                        scale: this.iconScale
+                    })
+                },
+                popupEl: document.getElementById('popup'),
+                popup: new ol.Overlay({
+                    element: this.popupEl,
+                    positioning: 'bottom-center',
+                    stopEvent: false,
+                    offset: [0, -15]
+                })
             }
         }
     }

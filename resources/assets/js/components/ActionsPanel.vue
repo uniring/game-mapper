@@ -17,20 +17,20 @@
 <script>
     export default {
         mounted() {
-            var self = this;
+            let self = this;
             document.onkeypress = function (e) {
                 e = e || window.event;
-                var key = String.fromCharCode(e.keyCode);
-                if (key == 'q' || key == 'n') {
+                let key = String.fromCharCode(e.keyCode);
+                if (key === 'q' || key === 'n') {
                     self.setTool('npc');
                 }
-                if (key == 'w') {
+                if (key === 'w') {
                     self.setTool('warp');
                 }
-                if (key == 'e') {
+                if (key === 'e') {
                     self.setTool('enemy');
                 }
-                if (key == 't') {
+                if (key === 't') {
                     self.setTool('trigger');
                 }
             };

@@ -29,42 +29,9 @@
     </style>
 </head>
 <body>
-<div id="app">
-    <map-panel>
-    </map-panel>
-</div>
-
-<script>
-    // FUNCTIONS
-    function addIcon(map, icon, coordinates)
-    {
-        var iconFeature = new ol.Feature({
-            geometry: new ol.geom.Point(coordinates),
-            name: 'Bob the ogre'
-        });
-
-        var iconStyle = new ol.style.Style({
-            image: icon,
-        });
-
-        var vectorSource = new ol.source.Vector({
-            features: [iconFeature]
-        });
-
-        var vectorLayer = new ol.layer.Vector({
-            updateWhileInteracting: true,
-            source: vectorSource,
-            style: iconStyle
-        });
-        map.addLayer(vectorLayer);
-        map.render();
-    }
-</script>
-<script>
-
-
-
-</script>
+    <div id="app">
+        <map-panel></map-panel>
+    </div>
 </body>
 <script src="{{asset('js/app.js')}}" ></script>
 </html>
