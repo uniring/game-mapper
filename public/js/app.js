@@ -43657,27 +43657,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             })
         });
         self.map.getView().fit(extent);
-        self.map.getView().on('change:resolution', function () {
-            var zoom = self.map.getView().getZoom();
-            self.iconScale = 0.35;
-            if (zoom > 4) {
-                self.iconScale = 0.5;
-            }
-            if (zoom > 5) {
-                self.iconScale = 0.75;
-            }
-            if (zoom > 6) {
-                self.iconScale = 1;
-            }
-            if (self.lastIconScale !== self.iconScale) {
-                for (var i in self.icons) {
-                    if (typeof self.icons[i].setScale == 'function') {
-                        self.icons[i].setScale(self.iconScale);
-                    }
-                }
-            }
-            self.lastIconScale = self.iconScale;
-        });
+        self.map.getView().on('change:resolution', self.scaleIcons);
 
         self.map.on('pointermove', function (e) {
             if (e.dragging) {
@@ -43716,17 +43696,31 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             });
             if (!feature) {
                 if (self.icons[self.selectedTool]) {
-                    self.addIcon(evt.coordinate);
+                    self.createPoint(evt.coordinate);
                     self.selectedTool = 'none';
                 }
             }
         });
+
+        self.loadPoints();
     },
 
     methods: {
-        addIcon: function addIcon(coordinates) {
+        createPoint: function createPoint(coordinates) {
             var self = this;
             var name = prompt('Enter a name');
+
+            self.addPoint(coordinates, name, self.selectedTool);
+
+            axios.post('/api/point', {
+                name: name,
+                map_x: coordinates[0],
+                map_y: coordinates[1],
+                type: self.selectedTool
+            });
+        },
+        addPoint: function addPoint(coordinates, name, icon) {
+            var self = this;
 
             var iconFeature = new ol.Feature({
                 geometry: new ol.geom.Point(coordinates),
@@ -43734,7 +43728,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             });
 
             var iconStyle = new ol.style.Style({
-                image: self.icons[self.selectedTool]
+                image: self.icons[icon]
             });
 
             var vectorSource = new ol.source.Vector({
@@ -43748,13 +43742,41 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             });
             self.map.addLayer(vectorLayer);
             self.map.render();
+        },
 
-            axios.post('/api/point', {
-                name: name,
-                map_x: coordinates[0],
-                map_y: coordinates[1],
-                type: self.selectedTool
+        loadPoints: function loadPoints() {
+            var self = this;
+
+            axios.get('/api/point').then(function (response) {
+                for (var k in response.data) {
+                    var point = response.data[k];
+                    self.addPoint([point.map_x, point.map_y], point.name, point.type);
+                }
+                self.scaleIcons();
             });
+        },
+        scaleIcons: function scaleIcons() {
+            var self = this;
+            var zoom = self.map.getView().getZoom();
+
+            self.iconScale = 0.35;
+            if (zoom > 4) {
+                self.iconScale = 0.5;
+            }
+            if (zoom > 5) {
+                self.iconScale = 0.75;
+            }
+            if (zoom > 6) {
+                self.iconScale = 1;
+            }
+            if (self.lastIconScale !== self.iconScale) {
+                for (var i in self.icons) {
+                    if (typeof self.icons[i].setScale == 'function') {
+                        self.icons[i].setScale(self.iconScale);
+                    }
+                }
+            }
+            self.lastIconScale = self.iconScale;
         }
     },
     data: function data() {
